@@ -603,6 +603,27 @@
             box-shadow: 0 8px 20px rgba(0,0,0,0.35);
         }
 
+        #rotate-btn {
+            position: absolute;
+            right: 24px;
+            bottom: 188px;
+            min-width: 86px;
+            height: 44px;
+            border-radius: 14px;
+            border: 2px solid rgba(255,255,255,0.28);
+            background: rgba(0,0,0,0.74);
+            color: var(--gold);
+            font-family: 'Press Start 2P';
+            font-size: 10px;
+            pointer-events: auto;
+            display: none;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.35);
+        }
+
+        #rotate-btn.active {
+            display: block;
+        }
+
         #tool-buttons {
             position: absolute;
             right: 130px;
@@ -682,6 +703,13 @@
                 height: 86px;
                 font-size: 12px;
                 bottom: 76px;
+            }
+
+            #rotate-btn {
+                bottom: 164px;
+                min-width: 78px;
+                height: 40px;
+                font-size: 9px;
             }
 
             #tool-buttons {
@@ -804,6 +832,7 @@
             <div id="joystick-stick"></div>
         </div>
         <button id="action-btn">USAR</button>
+        <button id="rotate-btn">ROTAR</button>
         <div id="tool-buttons"></div>
     </div>
 </div>
@@ -1385,6 +1414,12 @@ class Engine {
         }
     }
 
+    rotateFencePlacement() {
+        if (this.placementItem === 'FENCE') {
+            this.placementRotation = ((this.placementRotation || 0) + 1) % 4;
+        }
+    }
+
     setupListeners() {
         window.addEventListener('resize', () => {
             this.resizeGame();
@@ -1401,7 +1436,7 @@ class Engine {
         window.addEventListener('keydown', e => {
             this.inputs[e.key.toLowerCase()] = true;
             if (e.key.toLowerCase() === 'r' && this.placementItem === 'FENCE') {
-                this.placementRotation = ((this.placementRotation || 0) + 1) % 4;
+                this.rotateFencePlacement();
             }
         });
 
@@ -1510,16 +1545,29 @@ class Engine {
         actionBtn.addEventListener('touchstart', triggerAction, { passive: false });
         actionBtn.addEventListener('click', triggerAction);
 
+        const rotateBtn = document.getElementById('rotate-btn');
+        const triggerRotate = e => {
+            e.preventDefault();
+            this.rotateFencePlacement();
+            UIController.updateHUD();
+        };
+        rotateBtn.addEventListener('touchstart', triggerRotate, { passive: false });
+        rotateBtn.addEventListener('click', triggerRotate);
+
         const wrap = document.getElementById('joystick-wrap');
         const stick = document.getElementById('joystick-stick');
-        const center = { x: 62, y: 62 };
+        let joystickTouchId = null;
         let joystickActive = false;
         const maxRadius = 34;
 
         const resetJoystick = () => {
             joystickActive = false;
-            stick.style.left = `${center.x - 25}px`;
-            stick.style.top = `${center.y - 25}px`;
+            joystickTouchId = null;
+            const rect = wrap.getBoundingClientRect();
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            stick.style.left = `${centerX - 25}px`;
+            stick.style.top = `${centerY - 25}px`;
             this.inputs['w'] = false;
             this.inputs['a'] = false;
             this.inputs['s'] = false;
@@ -1548,20 +1596,28 @@ class Engine {
 
         wrap.addEventListener('touchstart', e => {
             e.preventDefault();
-            if (!e.touches.length) return;
+            const touch = e.changedTouches[0];
             joystickActive = true;
-            moveJoystick(e.touches[0].clientX, e.touches[0].clientY);
+            joystickTouchId = touch.identifier;
+            moveJoystick(touch.clientX, touch.clientY);
         }, { passive: false });
 
         wrap.addEventListener('touchmove', e => {
             e.preventDefault();
-            if (!joystickActive || !e.touches.length) return;
-            moveJoystick(e.touches[0].clientX, e.touches[0].clientY);
+            if (!joystickActive) return;
+            const touch = Array.from(e.touches).find(t => t.identifier === joystickTouchId);
+            if (!touch) return;
+            moveJoystick(touch.clientX, touch.clientY);
         }, { passive: false });
 
-        window.addEventListener('touchend', () => {
-            if (joystickActive) resetJoystick();
-        }, { passive: true });
+        const handleJoystickEnd = e => {
+            if (!joystickActive) return;
+            const ended = Array.from(e.changedTouches).some(t => t.identifier === joystickTouchId);
+            if (ended) resetJoystick();
+        };
+
+        window.addEventListener('touchend', handleJoystickEnd, { passive: true });
+        window.addEventListener('touchcancel', handleJoystickEnd, { passive: true });
 
         resetJoystick();
     }
@@ -1851,7 +1907,7 @@ class Engine {
             this.placementRotation = 0;
             this.selectedPlot = null;
             let msg = "Modo Construcción Activo.";
-            if (itemId === 'FENCE') msg = "Construcción activa. Toca una parcela para rotar con teclado si lo deseas.";
+            if (itemId === 'FENCE') msg = "Construcción de valla activa. Usa ROTAR para cambiar dirección.";
             if (itemId === 'GLASS_JAR') msg = "Jarra Equipada. Usa cerca de las luciérnagas.";
             if (itemId === 'SPRINKLER') msg = "Aspersor activo. Toca el terreno para colocarlo.";
             UIController.notify(msg);
@@ -2181,12 +2237,18 @@ class UIController {
 
         this.renderInventory();
         this.renderToolButtons();
+        this.renderRotateButton();
     }
 
     static renderToolButtons() {
         document.querySelectorAll('.tool-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.tool === Game.player.tool);
         });
+    }
+
+    static renderRotateButton() {
+        const rotateBtn = document.getElementById('rotate-btn');
+        rotateBtn.classList.toggle('active', Game.placementItem === 'FENCE');
     }
 
     static renderInventory() {
@@ -2224,7 +2286,7 @@ class UIController {
 
                 if (id === 'PLOT' || id === 'FENCE' || id === 'GLASS_JAR' || id === 'FIREFLY_JAR' || id === 'SPRINKLER') {
                     extraStyle = "cursor: pointer;";
-                    onclickEvent = `onclick="Game.togglePlacement('${id}')"`;
+                    onclickEvent = `onclick="Game.togglePlacement('${id}')"`
                     if (Game.placementItem === id) {
                         extraStyle += " border-color: #FFD700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.8); background: rgba(255,215,0,0.2);";
                     }
