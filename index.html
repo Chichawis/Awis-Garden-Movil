@@ -1957,13 +1957,20 @@ class Engine {
         }
 
         let ax = 0, ay = 0;
-        if (this.inputs['w']) ay -= 0.8;
-        if (this.inputs['s']) ay += 0.8;
-        if (this.inputs['a']) ax -= 0.8;
-        if (this.inputs['d']) ax += 0.8;
-
+        if (this.inputs['w']) ay -= 1;
+        if (this.inputs['s']) ay += 1;
+        if (this.inputs['a']) ax -= 1;
+        if (this.inputs['d']) ax += 1;
+        
+        if (ax !== 0 || ay !== 0) {
+            const len = Math.hypot(ax, ay);
+            ax = (ax / len) * 0.8;
+            ay = (ay / len) * 0.8;
+        }
+        
         this.player.vx = (this.player.vx + ax) * 0.82;
         this.player.vy = (this.player.vy + ay) * 0.82;
+
 
         let nextX = this.player.x + this.player.vx;
         let nextY = this.player.y + this.player.vy;
