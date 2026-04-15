@@ -1,0 +1,2349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Awis' Garden - Mobile iPhone Edition</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
+        :root {
+            --pink-1: #F8BBD0;
+            --pink-2: #F48FB1;
+            --pink-3: #F06292;
+            --pink-4: #880E4F;
+            --green-1: #4CAF50;
+            --green-2: #2e7d32;
+            --gold: #FFD700;
+            --panel: rgba(0, 0, 0, 0.78);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #050505;
+            color: #fff;
+            font-family: 'VT323', monospace;
+            touch-action: none;
+            overscroll-behavior: none;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #rotate-overlay {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at top, rgba(240, 98, 146, 0.18), transparent 40%),
+                linear-gradient(180deg, #120810 0%, #050505 100%);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .rotate-card {
+            max-width: 360px;
+            border: 2px solid var(--pink-2);
+            border-radius: 18px;
+            padding: 24px 20px;
+            background: rgba(0, 0, 0, 0.75);
+            box-shadow: 0 0 30px rgba(240, 98, 146, 0.2);
+        }
+
+        .rotate-card h2 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            line-height: 1.5;
+            color: var(--pink-1);
+            margin: 0 0 18px 0;
+        }
+
+        .rotate-card p {
+            font-size: 26px;
+            color: #fff;
+            margin: 0;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: #000;
+            border: none;
+            box-shadow: none;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            image-rendering: pixelated;
+            touch-action: none;
+        }
+
+        #main-menu,
+        #crafting-menu,
+        #shop-menu,
+        #seed-menu,
+        #pause-menu {
+            position: absolute;
+            inset: 0;
+            z-index: 100;
+        }
+
+        #main-menu {
+            background: rgba(10, 5, 10, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(6px);
+            padding: 20px;
+        }
+
+        #menu-decor {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .decor-vine {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(45deg, rgba(121, 85, 72, 0.2) 25%, transparent 25%),
+                linear-gradient(-45deg, rgba(121, 85, 72, 0.2) 25%, transparent 25%);
+            background-size: 64px 64px;
+            background-position: 0 0, 32px 32px;
+            opacity: 0.3;
+        }
+
+        .title-container {
+            text-align: center;
+            margin-bottom: 24px;
+            animation: float 4s ease-in-out infinite;
+            position: relative;
+            z-index: 10;
+            padding: 0 12px;
+        }
+
+        h1 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: clamp(22px, 5vw, 34px);
+            color: var(--pink-1);
+            text-shadow: 0 0 20px var(--pink-1), 4px 4px 0px var(--pink-4);
+            margin: 0 0 10px 0;
+            line-height: 1.3;
+        }
+
+        .subtitle {
+            color: var(--pink-3);
+            font-size: clamp(18px, 3vw, 22px);
+            letter-spacing: 1px;
+        }
+
+        #save-slots-container {
+            display: flex;
+            gap: 14px;
+            position: relative;
+            z-index: 10;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .save-slot {
+            background: rgba(0, 0, 0, 0.72);
+            border: 2px solid var(--pink-1);
+            border-radius: 12px;
+            width: min(180px, 28vw);
+            min-width: 140px;
+            padding: 14px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: inset 0 0 10px rgba(194, 24, 91, 0.2);
+        }
+
+        .save-slot:hover,
+        .save-slot:active {
+            background: rgba(194, 24, 91, 0.2);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(248, 187, 208, 0.35);
+        }
+
+        .slot-title {
+            font-family: 'Press Start 2P';
+            font-size: 10px;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .btn-delete {
+            margin-top: 10px;
+            background: #d32f2f;
+            color: white;
+            border: none;
+            padding: 5px 9px;
+            font-family: 'VT323';
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        #game-ui {
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+            display: none;
+            pointer-events: none;
+        }
+
+        .hud-top {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: var(--panel);
+            padding: 10px 12px;
+            border: 2px solid var(--green-1);
+            border-radius: 10px;
+            min-width: 170px;
+            max-width: 42vw;
+            pointer-events: auto;
+        }
+
+        .xp-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: #222;
+            margin-top: 5px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        #xp-fill {
+            width: 0%;
+            height: 100%;
+            background: var(--green-1);
+            transition: width 0.3s;
+        }
+
+        #quest-board {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(30, 20, 10, 0.9);
+            border: 2px solid #cd853f;
+            padding: 8px 14px;
+            border-radius: 8px;
+            text-align: center;
+            min-width: 220px;
+            max-width: 46vw;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            pointer-events: auto;
+        }
+
+        .quest-title {
+            font-family: 'Press Start 2P';
+            font-size: 9px;
+            color: #ffcc80;
+            margin-bottom: 5px;
+        }
+
+        .quest-desc {
+            font-size: 18px;
+            color: #fff;
+        }
+
+        .hud-right {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            text-align: right;
+            pointer-events: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .mobile-pause-btn {
+            background: var(--green-1);
+            border: none;
+            padding: 10px 12px;
+            font-family: 'Press Start 2P';
+            font-size: 10px;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 10px;
+            min-width: 90px;
+        }
+
+        #ui-time {
+            font-size: 21px;
+            text-shadow: 2px 2px #000;
+            background: var(--panel);
+            padding: 6px 10px;
+            border-radius: 10px;
+        }
+
+        .controls-hint {
+            position: absolute;
+            left: 50%;
+            bottom: 128px;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.62);
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 16px;
+            color: #ddd;
+            border: 1px solid #333;
+            pointer-events: none;
+            max-width: 80vw;
+            text-align: center;
+        }
+
+        #inventory-bar {
+            position: absolute;
+            left: 50%;
+            bottom: 10px;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            background: rgba(0,0,0,0.82);
+            padding: 8px 10px;
+            border-radius: 12px;
+            border: 2px solid #555;
+            pointer-events: auto;
+            max-width: 80vw;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        #inventory-bar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .inv-slot {
+            flex: 0 0 auto;
+            width: 42px;
+            height: 42px;
+            background: #222;
+            border: 2px solid #444;
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            font-family: 'VT323';
+            font-size: 15px;
+            color: white;
+            transition: all 0.2s;
+        }
+
+        .inv-slot .count {
+            position: absolute;
+            bottom: -5px;
+            right: -5px;
+            background: var(--green-1);
+            color: #000;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            text-align: center;
+            line-height: 20px;
+            font-weight: bold;
+            border: 2px solid #000;
+            font-size: 14px;
+        }
+
+        .inv-slot .label {
+            position: absolute;
+            top: -22px;
+            font-size: 12px;
+            color: #ddd;
+            white-space: nowrap;
+            display: none;
+        }
+
+        .inv-slot:active .label {
+            display: block;
+        }
+
+        #crafting-menu,
+        #shop-menu,
+        #seed-menu {
+            background: rgba(10, 20, 10, 0.92);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            padding: 14px;
+        }
+
+        .crafting-container {
+            background: #e8d5a5;
+            border: 6px solid #5c4033;
+            border-radius: 10px;
+            padding: 18px;
+            width: min(94vw, 720px);
+            max-height: 76vh;
+            overflow-y: auto;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.2), 0 10px 30px rgba(0,0,0,0.8);
+        }
+
+        .craft-title {
+            font-family: 'Press Start 2P';
+            color: #3e2723;
+            text-align: center;
+            margin-bottom: 16px;
+            text-shadow: 2px 2px #bcaaa4;
+            border-bottom: 4px solid #8d6e63;
+            padding-bottom: 14px;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .recipe-card {
+            background: #efebe9;
+            border: 2px dashed #8d6e63;
+            padding: 12px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+
+        .recipe-card:hover,
+        .recipe-card:active {
+            border-style: solid;
+            background: #fff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .recipe-info h3 {
+            margin: 0 0 5px 0;
+            color: #2e7d32;
+            font-size: 22px;
+            text-shadow: 1px 1px #ccc;
+        }
+
+        .recipe-info p {
+            margin: 0;
+            color: #4e342e;
+            font-size: 18px;
+        }
+
+        .recipe-req {
+            margin-top: 8px;
+            color: #d84315;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .btn-craft,
+        .btn-close-craft {
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .btn-craft {
+            background: var(--green-1);
+            color: white;
+            border: 2px solid var(--green-2);
+            padding: 12px 14px;
+            font-family: 'Press Start 2P';
+            font-size: 10px;
+            box-shadow: 2px 2px 0px #1b5e20;
+            min-width: 108px;
+        }
+
+        .btn-craft:disabled {
+            background: #bcaaa4;
+            border-color: #8d6e63;
+            color: #795548;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .btn-close-craft {
+            margin-top: 16px;
+            background: #d32f2f;
+            color: white;
+            border: 2px solid #b71c1c;
+            padding: 12px 20px;
+            font-family: 'Press Start 2P';
+            font-size: 11px;
+            box-shadow: 2px 2px 0px #7f0000;
+        }
+
+        #pause-menu {
+            background: rgba(0,0,0,0.92);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            gap: 10px;
+            padding: 20px;
+        }
+
+        .pause-title {
+            font-family: 'Press Start 2P';
+            color: #fff;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .pause-btn {
+            background: transparent;
+            border: 2px solid var(--pink-2);
+            color: var(--pink-2);
+            font-family: 'Press Start 2P';
+            font-size: 14px;
+            padding: 14px 18px;
+            cursor: pointer;
+            width: min(86vw, 320px);
+            transition: all 0.2s;
+            border-radius: 10px;
+        }
+
+        .pause-btn:active {
+            background: var(--pink-2);
+            color: #000;
+        }
+
+        #notifications {
+            position: absolute;
+            left: 14px;
+            bottom: 138px;
+            font-size: 20px;
+            pointer-events: none;
+            max-width: 50vw;
+        }
+
+        #notifications div {
+            background: rgba(0,0,0,0.45);
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 8px;
+            margin-top: 4px;
+        }
+
+        #mobile-controls {
+            position: absolute;
+            inset: 0;
+            z-index: 30;
+            pointer-events: none;
+        }
+
+        #joystick-wrap {
+            position: absolute;
+            left: 12px;
+            bottom: 58px;
+            width: 124px;
+            height: 124px;
+            pointer-events: auto;
+        }
+
+        #joystick-base {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.08);
+            border: 2px solid rgba(255,255,255,0.18);
+            box-shadow: inset 0 0 18px rgba(0,0,0,0.35);
+        }
+
+        #joystick-stick {
+            position: absolute;
+            left: 37px;
+            top: 37px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(248, 187, 208, 0.88);
+            border: 2px solid rgba(255,255,255,0.45);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+        }
+
+        #action-btn {
+            position: absolute;
+            right: 16px;
+            bottom: 82px;
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            border: 3px solid rgba(255,255,255,0.35);
+            background: radial-gradient(circle at top, #ffde59, #f57f17);
+            color: #261200;
+            font-family: 'Press Start 2P';
+            font-size: 14px;
+            pointer-events: auto;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+        }
+
+        #tool-buttons {
+            position: absolute;
+            right: 130px;
+            bottom: 14px;
+            display: grid;
+            grid-template-columns: repeat(4, 52px);
+            grid-auto-rows: 52px;
+            gap: 8px;
+            pointer-events: auto;
+        }
+
+        .tool-btn {
+            border: 2px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.68);
+            color: #fff;
+            border-radius: 12px;
+            font-family: 'VT323';
+            font-size: 14px;
+            line-height: 1;
+            padding: 4px;
+        }
+
+        .tool-btn.active {
+            border-color: var(--gold);
+            color: var(--gold);
+            box-shadow: 0 0 14px rgba(255, 215, 0, 0.45);
+            background: rgba(255,215,0,0.14);
+        }
+
+        .tool-btn span {
+            display: block;
+            font-size: 18px;
+            margin-bottom: 2px;
+        }
+
+        @media (max-height: 430px) {
+            .hud-top {
+                padding: 8px 10px;
+                min-width: 150px;
+            }
+
+            #quest-board {
+                max-width: 42vw;
+                min-width: 200px;
+                padding: 6px 10px;
+            }
+
+            .quest-desc {
+                font-size: 16px;
+            }
+
+            .controls-hint {
+                bottom: 118px;
+                font-size: 14px;
+            }
+
+            #inventory-bar {
+                bottom: 8px;
+                padding: 6px 8px;
+            }
+
+            #joystick-wrap {
+                width: 112px;
+                height: 112px;
+                bottom: 54px;
+            }
+
+            #joystick-stick {
+                left: 33px;
+                top: 33px;
+                width: 46px;
+                height: 46px;
+            }
+
+            #action-btn {
+                width: 86px;
+                height: 86px;
+                font-size: 12px;
+                bottom: 76px;
+            }
+
+            #tool-buttons {
+                right: 116px;
+                grid-template-columns: repeat(4, 48px);
+                grid-auto-rows: 48px;
+                gap: 6px;
+            }
+
+            .tool-btn {
+                font-size: 12px;
+            }
+
+            .tool-btn span {
+                font-size: 16px;
+            }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body>
+<div id="rotate-overlay">
+    <div class="rotate-card">
+        <h2>AWIS' GARDEN</h2>
+        <p>Gira tu iPhone en horizontal para jugar.</p>
+    </div>
+</div>
+
+<div id="game-container">
+    <div id="game-ui">
+        <div class="hud-top">
+            <div style="color: #4CAF50; font-size: 20px; display: flex; justify-content: space-between; gap: 10px;">
+                <span>NIVEL <span id="ui-lvl">1</span></span>
+                <span id="ui-xp-text" style="font-size: 14px; color: #888;">0/100 XP</span>
+            </div>
+            <div class="xp-bar-bg"><div id="xp-fill"></div></div>
+            <div style="color: #FFD700; font-size: 20px; margin-top: 8px;">FLORINS: <span id="ui-money">0</span></div>
+            <div style="color: #00d4ff; font-size: 18px; margin-top: 8px;">HERRAMIENTA: <span id="ui-tool" style="color: #fff">MANO</span></div>
+        </div>
+
+        <div id="quest-board">
+            <div class="quest-title">CONTRATO ACTIVO</div>
+            <div id="quest-info" class="quest-desc">Cargando pedido...</div>
+        </div>
+
+        <div class="hud-right">
+            <button class="mobile-pause-btn" onclick="Game.pauseGame()">PAUSA</button>
+            <div id="ui-time">DÍA 1 - 06:00</div>
+        </div>
+
+        <div class="controls-hint">
+            Joystick para moverte | Toca herramienta | Botón USAR para interactuar
+        </div>
+
+        <div id="inventory-bar"></div>
+        <div id="notifications"></div>
+    </div>
+
+    <div id="seed-menu">
+        <div>
+            <div class="crafting-container" style="border-color: #4CAF50; background: #e8f5e9;">
+                <h2 class="craft-title" style="color: #1b5e20; border-bottom-color: #81c784;">VENTA DE SEMILLAS</h2>
+                <div id="seed-list"></div>
+            </div>
+            <button class="btn-close-craft" style="background: #d32f2f;" onclick="UIController.closeSeedMenu()">SALIR</button>
+        </div>
+    </div>
+
+    <div id="crafting-menu">
+        <div>
+            <div class="crafting-container">
+                <h2 class="craft-title">MESA DE BOTÁNICA</h2>
+                <div id="recipes-list"></div>
+            </div>
+            <button class="btn-close-craft" onclick="UIController.closeCrafting()">CERRAR</button>
+        </div>
+    </div>
+
+    <div id="shop-menu">
+        <div>
+            <div class="crafting-container" style="border-color: #FFD700; background: #fff8e1;">
+                <h2 class="craft-title" style="color: #b8860b; border-bottom-color: #ffd54f;">TIENDA DEL MERCADER</h2>
+                <div id="shop-list"></div>
+            </div>
+            <button class="btn-close-craft" style="background: #f57f17; border-color: #bc5100; box-shadow: 2px 2px 0px #bc5100;" onclick="UIController.closeShop()">SALIR</button>
+        </div>
+    </div>
+
+    <div id="pause-menu">
+        <h2 class="pause-title">PAUSA</h2>
+        <button class="pause-btn" onclick="Game.resumeGame()">CONTINUAR</button>
+        <button class="pause-btn" onclick="Game.saveAndExit()">GUARDAR Y SALIR</button>
+    </div>
+
+    <div id="main-menu">
+        <div id="menu-decor">
+            <div class="decor-vine"></div>
+            <div style="position: absolute; top: 10px; left: 10px; font-size: 24px; color: #F06292;">✿</div>
+            <div style="position: absolute; top: 10px; right: 10px; font-size: 24px; color: #F06292;">❀</div>
+            <div style="position: absolute; bottom: 10px; left: 10px; font-size: 24px; color: #F06292;">❀</div>
+            <div style="position: absolute; bottom: 10px; right: 10px; font-size: 24px; color: #F06292;">✿</div>
+        </div>
+
+        <div class="title-container">
+            <h1>AWIS' GARDEN</h1>
+            <div class="subtitle">BOTANICAL TYCOON - ALCHEMY</div>
+        </div>
+        <div id="save-slots-container"></div>
+    </div>
+
+    <canvas id="mainView"></canvas>
+
+    <div id="mobile-controls">
+        <div id="joystick-wrap">
+            <div id="joystick-base"></div>
+            <div id="joystick-stick"></div>
+        </div>
+        <button id="action-btn">USAR</button>
+        <div id="tool-buttons"></div>
+    </div>
+</div>
+
+<script>
+const ENUMS = {
+    TOOLS: {
+        HAND: 'MANO',
+        HOE: 'AZADA',
+        WATER: 'REGADERA',
+        POTION: 'POCIÓN MAGICA',
+        FERTILIZER: 'FERTILIZANTE',
+        GOLD: 'TRANSMUTAR ORO',
+        MAGNET: 'IMÁN MÁGICO'
+    },
+    PLANT_STATE: { SEED: 0, SPROUT: 1, GROWING: 2, MATURE: 3 },
+    SCENE: { MENU: 'MENU', PLAY: 'PLAY', PAUSE: 'PAUSE', CRAFTING: 'CRAFTING', SHOP: 'SHOP', SEED_MENU: 'SEED_MENU' }
+};
+
+const DB = {
+    PLANTS: {
+        'ROSA': { id: 'ROSA', name: 'Rosa', color: '#ff4d4d', seedColor: '#5a2d2d', growthTime: 1.0, xp: 20, price: 15, seedDropChance: 0.20 },
+        'LIRIO': { id: 'LIRIO', name: 'Lirio', color: '#ffffff', seedColor: '#4a4a4a', growthTime: 1.5, xp: 35, price: 30, seedDropChance: 0.12 },
+        'ORQUIDEA': { id: 'ORQUIDEA', name: 'Orquídea', color: '#e066ff', seedColor: '#3a1a3d', growthTime: 3.0, xp: 100, price: 85, seedDropChance: 0.05 },
+        'TULIPAN': { id: 'TULIPAN', name: 'Tulipán', color: '#ff9800', seedColor: '#5d4037', growthTime: 2.0, xp: 50, price: 45, seedDropChance: 0.20 },
+        'GIRASOL': { id: 'GIRASOL', name: 'Girasol', color: '#ffeb3b', seedColor: '#333300', growthTime: 2.5, xp: 70, price: 60, seedDropChance: 0.10 }
+    },
+    RECIPES: {
+        'POTION_GROWTH': {
+            id: 'POTION_GROWTH', name: 'Poción de Crecimiento', desc: 'Crece una semilla al 100% instantáneamente.',
+            req: { 'ROSA': 4, 'LIRIO': 6 }, isItem: true
+        },
+        'SUPER_FERTILIZER': {
+            id: 'SUPER_FERTILIZER', name: 'Súper Fertilizante', desc: 'Riega la tierra eternamente.',
+            req: { 'TULIPAN': 8, 'GIRASOL': 7 }, isItem: true
+        },
+        'GOLD_TRANSMUTE': {
+            id: 'GOLD_TRANSMUTE', name: 'Transmutación de Oro', desc: 'Usa esto sobre una planta adulta para volverla 350 Florins.',
+            req: { 'ORQUIDEA': 8, 'GIRASOL': 10, 'ROSA': 9 }, isItem: true
+        },
+        'MAGIC_MAGNET': {
+            id: 'MAGIC_MAGNET', name: 'Imán Mágico', desc: 'Atrae semillas lejanas al usarlo.',
+            req: { 'LIRIO': 10, 'ORQUIDEA': 9, 'TULIPAN': 11 }, isItem: true
+        }
+    },
+    SHOP: {
+        'PLOT': { id: 'PLOT', name: 'Parcela de Tierra', desc: 'Añade una zona cultivable.', price: 100, qty: 1 },
+        'FENCE': { id: 'FENCE', name: 'Valla de Madera', desc: 'Decora tu granja (x3 unidades).', price: 300, qty: 3 },
+        'GLASS_JAR': { id: 'GLASS_JAR', name: 'Jarra de Vidrio', desc: 'Útil para atrapar cosas en la noche...', price: 150, qty: 1 },
+        'SPRINKLER': { id: 'SPRINKLER', name: 'Aspersor Autom.', desc: 'Riega constantemente plantas en su área.', price: 500, qty: 1 }
+    },
+    SEED_EXCHANGE: [
+        { seeds: 50, florins: 80 },
+        { seeds: 100, florins: 160 },
+        { seeds: 200, florins: 330 },
+        { seeds: 300, florins: 500 },
+        { seeds: 400, florins: 650 },
+        { seeds: 500, florins: 820 }
+    ]
+};
+
+class SaveManager {
+    static getSave(slotId) {
+        const data = localStorage.getItem(`awis_save_${slotId}`);
+        return data ? JSON.parse(data) : null;
+    }
+    static saveGame(slotId, gameState) {
+        const serialized = {
+            version: '9.0-mobile',
+            timestamp: new Date().toLocaleString(),
+            player: { ...gameState.player },
+            world: {
+                timeElapsed: gameState.world.timeElapsed,
+                day: gameState.world.day,
+                camera: { ...gameState.world.camera },
+                currentQuest: gameState.world.currentQuest
+            },
+            entities: gameState.world.entities.map(e => {
+                if (e.type === 'PLOT') return { type: 'PLOT', x: e.x, y: e.y, tilled: e.tilled, water: e.water, plant: e.plant ? { id: e.plant.data.id, growth: e.plant.growth, state: e.plant.state } : null };
+                if (e.type === 'SEED') return { type: 'SEED', x: e.x, y: e.y, plantId: e.plantId };
+                if (e.type === 'WORKBENCH') return { type: 'WORKBENCH', x: e.x, y: e.y };
+                if (e.type === 'SHOP') return { type: 'SHOP', x: e.x, y: e.y };
+                if (e.type === 'SEED_SILO') return { type: 'SEED_SILO', x: e.x, y: e.y };
+                if (e.type === 'FENCE') return { type: 'FENCE', x: e.x, y: e.y, rotation: e.rotation };
+                if (e.type === 'FIREFLY_JAR') return { type: 'FIREFLY_JAR', x: e.x, y: e.y };
+                if (e.type === 'SPRINKLER') return { type: 'SPRINKLER', x: e.x, y: e.y };
+            }).filter(Boolean)
+        };
+        localStorage.setItem(`awis_save_${slotId}`, JSON.stringify(serialized));
+    }
+    static deleteSave(slotId, e) {
+        e.stopPropagation();
+        if (confirm(`¿Borrar Juego ${slotId}?`)) {
+            localStorage.removeItem(`awis_save_${slotId}`);
+            UIController.renderSaveSlots();
+        }
+    }
+}
+
+class SpriteLibrary {
+    constructor() { this.lib = {}; this.generateAll(); }
+    generateAll() {
+        this.lib.grass = this.bake(32, 32, ctx => {
+            ctx.fillStyle = '#2d5a27';
+            ctx.fillRect(0,0,32,32);
+            ctx.fillStyle = '#24491f';
+            for(let i=0; i<8; i++) ctx.fillRect(Math.random()*28, Math.random()*28, 2, 2);
+        });
+
+        this.lib.dirt_dry = this.bake(32, 32, ctx => {
+            ctx.fillStyle = '#5c4033';
+            ctx.fillRect(2,2,28,28);
+        });
+
+        this.lib.dirt_wet = this.bake(32, 32, ctx => {
+            ctx.fillStyle = '#2b1d16';
+            ctx.fillRect(2,2,28,28);
+        });
+
+        this.lib.player = this.bake(32, 48, ctx => {
+            ctx.fillStyle = '#3e2723'; ctx.fillRect(8, 2, 16, 14);
+            ctx.fillStyle = '#ffdbac'; ctx.fillRect(10, 6, 12, 12);
+            ctx.fillStyle = '#c2185b'; ctx.fillRect(8, 18, 16, 22);
+            ctx.fillStyle = '#000'; ctx.fillRect(12, 10, 2, 2); ctx.fillRect(18, 10, 2, 2);
+        });
+
+        this.lib.workbench = this.bake(64, 64, ctx => {
+            ctx.fillStyle = '#5d4037'; ctx.fillRect(4, 20, 56, 30);
+            ctx.fillStyle = '#3e2723'; ctx.fillRect(8, 50, 8, 10); ctx.fillRect(48, 50, 8, 10);
+            ctx.fillStyle = '#8e24aa'; ctx.fillRect(15, 10, 10, 15);
+            ctx.fillStyle = '#00bfa5'; ctx.beginPath(); ctx.arc(45, 18, 8, 0, 7); ctx.fill();
+        });
+
+        this.lib.shop = this.bake(64, 64, ctx => {
+            ctx.fillStyle = '#795548'; ctx.fillRect(8, 20, 48, 40);
+            ctx.fillStyle = '#FFD700'; ctx.beginPath(); ctx.moveTo(4, 20); ctx.lineTo(32, 5); ctx.lineTo(60, 20); ctx.fill();
+            ctx.fillStyle = '#3e2723'; ctx.fillRect(20, 30, 24, 15);
+            ctx.fillStyle = '#000'; ctx.fillRect(24, 35, 16, 10);
+            ctx.fillStyle = '#FF8C00'; ctx.beginPath(); ctx.arc(32, 12, 5, 0, 7); ctx.fill();
+        });
+
+        this.lib.seed_silo = this.bake(64, 64, ctx => {
+            ctx.fillStyle = '#8d6e63'; ctx.fillRect(16, 15, 32, 44);
+            ctx.fillStyle = '#5d4037'; ctx.fillRect(12, 10, 40, 10);
+            ctx.fillStyle = '#4CAF50'; ctx.fillRect(24, 30, 16, 16);
+            ctx.fillStyle = '#FFF'; ctx.font = '12px "VT323"'; ctx.fillText('S', 28, 42);
+            ctx.fillStyle = '#3e2723'; ctx.fillRect(28, 50, 8, 9);
+        });
+
+        this.lib.fence = this.bake(32, 32, ctx => {
+            ctx.fillStyle = '#8d6e63';
+            ctx.fillRect(4, 8, 6, 24); ctx.fillRect(22, 8, 6, 24);
+            ctx.fillRect(0, 12, 32, 4); ctx.fillRect(0, 22, 32, 4);
+        });
+
+        this.lib.firefly_jar = this.bake(32, 32, ctx => {
+            ctx.fillStyle = 'rgba(173, 216, 230, 0.4)'; ctx.fillRect(8, 10, 16, 18);
+            ctx.fillStyle = '#888'; ctx.fillRect(10, 6, 12, 4);
+            ctx.fillStyle = '#ccff00'; ctx.beginPath(); ctx.arc(12, 16, 2, 0, 7); ctx.arc(20, 22, 2, 0, 7); ctx.arc(16, 20, 1.5, 0, 7); ctx.fill();
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(8, 10, 16, 18);
+        });
+
+        this.lib.sprinkler_base = this.bake(32, 32, ctx => {
+            ctx.fillStyle = '#607d8b'; ctx.fillRect(12, 20, 8, 12);
+            ctx.fillStyle = '#455a64'; ctx.fillRect(10, 16, 12, 4);
+        });
+
+        this.lib.sprinkler_head = this.bake(32, 32, ctx => {
+            ctx.fillStyle = '#00bcd4'; ctx.beginPath(); ctx.arc(16, 16, 5, 0, 7); ctx.fill();
+            ctx.fillStyle = '#b2ebf2'; ctx.fillRect(14, 8, 4, 16);
+        });
+
+        Object.values(DB.PLANTS).forEach(p => {
+            this.lib[`seed_${p.id}`] = this.bake(16, 16, ctx => {
+                ctx.fillStyle = p.seedColor;
+                ctx.beginPath();
+                ctx.arc(8, 8, 5, 0, 7);
+                ctx.fill();
+            });
+
+            this.lib[`flower_${p.id}`] = this.bake(32, 32, ctx => {
+                ctx.fillStyle = '#2e7d32';
+                ctx.fillRect(14, 15, 4, 17);
+                ctx.fillStyle = p.color;
+                if (p.id === 'GIRASOL') {
+                    ctx.beginPath(); ctx.arc(16, 12, 10, 0, 7); ctx.fill();
+                    ctx.fillStyle = '#3e2723';
+                    ctx.beginPath(); ctx.arc(16, 12, 4, 0, 7); ctx.fill();
+                } else if (p.id === 'LIRIO') {
+                    ctx.beginPath(); ctx.moveTo(16,2); ctx.lineTo(26,15); ctx.lineTo(6,15); ctx.fill();
+                } else {
+                    for(let i=0; i<6; i++) {
+                        ctx.beginPath();
+                        ctx.arc(16 + Math.cos(i)*7, 12 + Math.sin(i)*7, 6, 0, 7);
+                        ctx.fill();
+                    }
+                }
+            });
+        });
+    }
+    bake(w, h, draw) {
+        const c = document.createElement('canvas');
+        c.width = w;
+        c.height = h;
+        draw(c.getContext('2d'));
+        return c;
+    }
+    get(id) { return this.lib[id] || this.lib.grass; }
+}
+
+class Particle {
+    constructor(x, y, type) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 4;
+        this.vy = (Math.random() - 1) * 3 - 1;
+        this.life = 1.0;
+        this.color = type === 'WATER' ? (Math.random() > 0.5 ? '#00bfa5' : '#00d4ff') :
+                     type === 'GOLD'  ? (Math.random() > 0.5 ? '#FFD700' : '#FFA500') :
+                     (Math.random() > 0.5 ? '#5c4033' : '#3e2723');
+        this.size = Math.random() * 3 + 2;
+    }
+    update(dt) {
+        this.x += this.vx * (dt/16);
+        this.y += this.vy * (dt/16);
+        this.vy += 0.2 * (dt/16);
+        this.life -= 0.04 * (dt/16);
+    }
+    draw(ctx, cam) {
+        ctx.globalAlpha = Math.max(0, this.life);
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x - cam.x, this.y - cam.y, this.size, this.size);
+        ctx.globalAlpha = 1.0;
+    }
+}
+
+class SeedDrop {
+    constructor(x, y, plantId) {
+        this.type = 'SEED';
+        this.x = x;
+        this.y = y;
+        this.plantId = plantId;
+        this.floating = Math.random() * 10;
+        this.toDelete = false;
+        this.magnetized = false;
+        this.target = null;
+    }
+    update(dt) {
+        this.floating += 0.005 * dt;
+        if (this.magnetized && this.target) {
+            const tx = this.target.x + 16, ty = this.target.y + 24;
+            const dx = tx - this.x, dy = ty - this.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < 20) {
+                this.toDelete = true;
+                Game.player.seeds++;
+                UIController.notify("+1 Semilla Silvestre");
+                Game.particles.push(new Particle(this.x, this.y, 'GOLD'));
+                return;
+            }
+            let speed = 800 * (dt / 1000);
+            if (speed > dist) speed = dist;
+            let moveX = (dx / dist) * speed;
+            let moveY = (dy / dist) * speed;
+            let nextX = this.x + moveX, nextY = this.y + moveY;
+            let collided = false;
+
+            for (let e of Game.world.entities) {
+                if (e.type === 'FENCE') {
+                    if (nextX < e.x + 32 && nextX + 16 > e.x && this.y < e.y + 32 && this.y + 16 > e.y) { moveX = 0; collided = true; }
+                    if (this.x < e.x + 32 && this.x + 16 > e.x && nextY < e.y + 32 && nextY + 16 > e.y) { moveY = 0; collided = true; }
+                }
+            }
+
+            this.x += moveX;
+            this.y += moveY;
+            if (collided && moveX === 0 && moveY === 0) this.magnetized = false;
+        }
+    }
+    draw(ctx, lib, cam) {
+        ctx.drawImage(lib.get(`seed_${this.plantId}`), this.x - cam.x, this.y - cam.y + Math.sin(this.floating)*4);
+    }
+}
+
+class Plant {
+    constructor(typeData, growth = 0, state = ENUMS.PLANT_STATE.SEED) {
+        this.data = typeData;
+        this.growth = growth;
+        this.state = state;
+    }
+    update(dt, water) {
+        if (water > 0 && this.growth < 100) {
+            this.growth += 0.004 * this.data.growthTime * (dt/16);
+            if (this.growth > 30) this.state = ENUMS.PLANT_STATE.SPROUT;
+            if (this.growth > 70) this.state = ENUMS.PLANT_STATE.GROWING;
+            if (this.growth >= 100) this.state = ENUMS.PLANT_STATE.MATURE;
+        }
+    }
+    draw(ctx, lib, cam, x, y) {
+        if (this.state === ENUMS.PLANT_STATE.MATURE) {
+            const time = performance.now() * 0.0015;
+            const offset = (x + y) * 0.05;
+            const angle = Math.sin(time + offset) * 0.08;
+            ctx.save();
+            ctx.translate(x - cam.x + 16, y - cam.y + 20);
+            ctx.rotate(angle);
+            ctx.drawImage(lib.get(`flower_${this.data.id}`), -16, -32);
+            ctx.restore();
+        } else {
+            ctx.fillStyle = '#4CAF50';
+            const h = (this.growth/100) * 12;
+            ctx.fillRect(x - cam.x + 14, y - cam.y + 20 - h, 4, h);
+        }
+    }
+}
+
+class Plot {
+    constructor(x, y) {
+        this.type = 'PLOT';
+        this.x = x;
+        this.y = y;
+        this.tilled = false;
+        this.water = 0;
+        this.plant = null;
+        this.toDelete = false;
+    }
+    update(dt) {
+        if (this.water > 0) this.water = Math.max(0, this.water - 0.004 * (dt/16));
+        if (this.plant) this.plant.update(dt, this.water);
+    }
+    draw(ctx, lib, cam) {
+        ctx.drawImage(this.water > 10 ? lib.get('dirt_wet') : lib.get('dirt_dry'), this.x - cam.x, this.y - cam.y);
+    }
+}
+
+class Workbench {
+    constructor(x, y) { this.type = 'WORKBENCH'; this.x = x; this.y = y; this.toDelete = false; }
+    update() {}
+    draw(ctx, lib, cam) { ctx.drawImage(lib.get('workbench'), this.x - cam.x, this.y - cam.y); }
+}
+
+class ShopBuilding {
+    constructor(x, y) { this.type = 'SHOP'; this.x = x; this.y = y; this.toDelete = false; }
+    update() {}
+    draw(ctx, lib, cam) { ctx.drawImage(lib.get('shop'), this.x - cam.x, this.y - cam.y); }
+}
+
+class SeedSilo {
+    constructor(x, y) { this.type = 'SEED_SILO'; this.x = x; this.y = y; this.toDelete = false; }
+    update() {}
+    draw(ctx, lib, cam) { ctx.drawImage(lib.get('seed_silo'), this.x - cam.x, this.y - cam.y); }
+}
+
+class Fence {
+    constructor(x, y, rotation = 0) {
+        this.type = 'FENCE';
+        this.x = x;
+        this.y = y;
+        this.rotation = rotation;
+        this.toDelete = false;
+    }
+    update() {}
+    draw(ctx, lib, cam) {
+        ctx.save();
+        ctx.translate(this.x - cam.x + 16, this.y - cam.y + 16);
+        ctx.rotate((this.rotation * 90) * Math.PI / 180);
+        ctx.drawImage(lib.get('fence'), -16, -16);
+        ctx.restore();
+    }
+}
+
+class FireflyJarEntity {
+    constructor(x, y) { this.type = 'FIREFLY_JAR'; this.x = x; this.y = y; this.toDelete = false; }
+    update() {}
+    draw(ctx, lib, cam) { ctx.drawImage(lib.get('firefly_jar'), this.x - cam.x, this.y - cam.y); }
+}
+
+class Sprinkler {
+    constructor(x, y) {
+        this.type = 'SPRINKLER';
+        this.x = x;
+        this.y = y;
+        this.toDelete = false;
+        this.waterTimer = 0;
+        this.animTimer = 0;
+        this.angle = 0;
+    }
+    update(dt) {
+        this.animTimer += dt;
+        this.waterTimer += dt;
+        this.angle += 0.003 * dt;
+
+        if (this.animTimer > 100) {
+            this.animTimer = 0;
+            let p1 = new Particle(this.x + 16, this.y + 12, 'WATER');
+            p1.vx = Math.cos(this.angle) * 3; p1.vy = Math.sin(this.angle) * 3;
+            p1.life = 0.6;
+            let p2 = new Particle(this.x + 16, this.y + 12, 'WATER');
+            p2.vx = Math.cos(this.angle + Math.PI) * 3; p2.vy = Math.sin(this.angle + Math.PI) * 3;
+            p2.life = 0.6;
+            Game.particles.push(p1, p2);
+        }
+
+        if (this.waterTimer > 1000) {
+            this.waterTimer = 0;
+            Game.world.entities.forEach(e => {
+                if (e.type === 'PLOT') {
+                    const dx = (e.x + 16) - (this.x + 16);
+                    const dy = (e.y + 16) - (this.y + 16);
+                    if (dx*dx + dy*dy <= 5625) {
+                        if (e.water < 99999) e.water = 100;
+                    }
+                }
+            });
+        }
+    }
+    draw(ctx, lib, cam) {
+        ctx.drawImage(lib.get('sprinkler_base'), this.x - cam.x, this.y - cam.y);
+        ctx.save();
+        ctx.translate(this.x - cam.x + 16, this.y - cam.y + 16);
+        ctx.rotate(this.angle);
+        ctx.drawImage(lib.get('sprinkler_head'), -16, -16);
+        ctx.restore();
+    }
+}
+
+class FireflySwarm {
+    constructor(x, y) {
+        this.type = 'SWARM';
+        this.x = x;
+        this.y = y;
+        this.toDelete = false;
+        this.flies = Array(12).fill(0).map(() => ({ ox: (Math.random()-0.5)*50, oy: (Math.random()-0.5)*50, t: Math.random()*100 }));
+    }
+    update(dt) {
+        this.flies.forEach(f => {
+            f.t += dt*0.005;
+            f.ox += Math.sin(f.t)*0.6;
+            f.oy += Math.cos(f.t*0.8)*0.6;
+        });
+    }
+    draw(ctx, lib, cam) {
+        ctx.fillStyle = '#ccff00';
+        this.flies.forEach(f => {
+            const fx = this.x + f.ox - cam.x;
+            const fy = this.y + f.oy - cam.y;
+            ctx.beginPath();
+            ctx.arc(fx, fy, 1.5, 0, 7);
+            ctx.fill();
+        });
+    }
+}
+
+class Engine {
+    constructor() {
+        this.canvas = document.getElementById('mainView');
+        this.ctx = this.canvas.getContext('2d');
+        this.lib = new SpriteLibrary();
+        this.scene = ENUMS.SCENE.MENU;
+        this.inputs = {};
+        this.lastTime = 0;
+        this.mouseX = 0;
+        this.mouseY = 0;
+        this.placementItem = null;
+        this.placementRotation = 0;
+        this.selectedPlot = null;
+        this.isDraggingPlot = false;
+        this.dragOriginalPos = { x: 0, y: 0 };
+        this.touchPointerDown = false;
+
+        this.lightCanvas = document.createElement('canvas');
+        this.lightCtx = this.lightCanvas.getContext('2d');
+
+        this.resizeGame();
+        this.setupListeners();
+        this.setupMobileControls();
+        UIController.renderSaveSlots();
+
+        this.initWorld(true);
+        requestAnimationFrame(t => this.loop(t));
+    }
+
+    get viewWidth() { return this.canvas.width; }
+    get viewHeight() { return this.canvas.height; }
+
+    resizeGame() {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        this.canvas.width = w;
+        this.canvas.height = h;
+        this.lightCanvas.width = w;
+        this.lightCanvas.height = h;
+    }
+
+    updateOrientationUI() {
+        const rotateOverlay = document.getElementById('rotate-overlay');
+        const isPortrait = window.innerHeight > window.innerWidth;
+        rotateOverlay.style.display = isPortrait ? 'flex' : 'none';
+    }
+
+    getCanvasPos(clientX, clientY) {
+        const rect = this.canvas.getBoundingClientRect();
+        const x = ((clientX - rect.left) / rect.width) * this.canvas.width;
+        const y = ((clientY - rect.top) / rect.height) * this.canvas.height;
+        return { x, y };
+    }
+
+    handlePointerMove(clientX, clientY) {
+        const pos = this.getCanvasPos(clientX, clientY);
+        this.mouseX = pos.x;
+        this.mouseY = pos.y;
+
+        if (this.isDraggingPlot && this.selectedPlot) {
+            const cam = this.world.camera;
+            const wx = this.mouseX + cam.x;
+            const wy = this.mouseY + cam.y;
+            this.selectedPlot.x = Math.floor(wx / 32) * 32;
+            this.selectedPlot.y = Math.floor(wy / 32) * 32;
+        }
+    }
+
+    handlePointerDown() {
+        if (this.scene !== ENUMS.SCENE.PLAY) return;
+
+        const cam = this.world.camera;
+        const wx = this.mouseX + cam.x;
+        const wy = this.mouseY + cam.y;
+
+        if (this.placementItem) {
+            if (this.placementItem === 'PLOT' || this.placementItem === 'FENCE' || this.placementItem === 'FIREFLY_JAR' || this.placementItem === 'SPRINKLER') {
+                this.placeStructure();
+            }
+            return;
+        }
+
+        if (this.selectedPlot) {
+            const px = this.selectedPlot.x;
+            const py = this.selectedPlot.y;
+            if (wx >= px && wx <= px + 16 && wy >= py - 20 && wy <= py - 4) {
+                this.isDraggingPlot = true;
+                this.dragOriginalPos = { x: px, y: py };
+                return;
+            }
+            if (wx >= px + 16 && wx <= px + 32 && wy >= py - 20 && wy <= py - 4) {
+                this.selectedPlot.toDelete = true;
+                const typeId = this.selectedPlot.type;
+                this.player.inventory[typeId] = (this.player.inventory[typeId] || 0) + 1;
+                this.selectedPlot = null;
+                this.world.entities = this.world.entities.filter(ent => !ent.toDelete);
+                UIController.notify("Objeto recogido y guardado");
+                UIController.updateHUD();
+                return;
+            }
+        }
+
+        let clickedPlot = null;
+        for (let i = this.world.entities.length - 1; i >= 0; i--) {
+            const ent = this.world.entities[i];
+            if ((ent.type === 'PLOT' || ent.type === 'FENCE' || ent.type === 'FIREFLY_JAR' || ent.type === 'SPRINKLER') &&
+                wx >= ent.x && wx < ent.x + 32 && wy >= ent.y && wy < ent.y + 32) {
+                clickedPlot = ent;
+                break;
+            }
+        }
+        this.selectedPlot = clickedPlot;
+    }
+
+    handlePointerUp() {
+        if (this.isDraggingPlot && this.selectedPlot) {
+            this.isDraggingPlot = false;
+            const occupied = this.world.entities.some(ent => ent !== this.selectedPlot && Math.abs(ent.x - this.selectedPlot.x) < 24 && Math.abs(ent.y - this.selectedPlot.y) < 24);
+            if (occupied) {
+                this.selectedPlot.x = this.dragOriginalPos.x;
+                this.selectedPlot.y = this.dragOriginalPos.y;
+                UIController.notify("Espacio bloqueado", true);
+            } else {
+                UIController.notify("Objeto movido exitosamente");
+            }
+        }
+    }
+
+    setupListeners() {
+        window.addEventListener('resize', () => {
+            this.resizeGame();
+            this.updateOrientationUI();
+        });
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                this.resizeGame();
+                this.updateOrientationUI();
+            }, 150);
+        });
+        this.updateOrientationUI();
+
+        window.addEventListener('keydown', e => {
+            this.inputs[e.key.toLowerCase()] = true;
+            if (e.key.toLowerCase() === 'r' && this.placementItem === 'FENCE') {
+                this.placementRotation = ((this.placementRotation || 0) + 1) % 4;
+            }
+        });
+
+        window.addEventListener('keyup', e => {
+            this.inputs[e.key.toLowerCase()] = false;
+        });
+
+        window.addEventListener('keypress', e => {
+            if ((this.scene === ENUMS.SCENE.CRAFTING || this.scene === ENUMS.SCENE.SHOP || this.scene === ENUMS.SCENE.SEED_MENU) && (e.key === 'e' || e.key === 'E')) {
+                UIController.closeCrafting();
+                UIController.closeShop();
+                UIController.closeSeedMenu();
+                return;
+            }
+            if (this.scene !== ENUMS.SCENE.PLAY) return;
+
+            if (e.key === '1') this.player.tool = ENUMS.TOOLS.HAND;
+            if (e.key === '2') this.player.tool = ENUMS.TOOLS.HOE;
+            if (e.key === '3') this.player.tool = ENUMS.TOOLS.WATER;
+            if (e.key === '4') this.player.tool = ENUMS.TOOLS.POTION;
+            if (e.key === '5') this.player.tool = ENUMS.TOOLS.FERTILIZER;
+            if (e.key === '6') this.player.tool = ENUMS.TOOLS.GOLD;
+            if (e.key === '7') this.player.tool = ENUMS.TOOLS.MAGNET;
+            if (e.key === 'e' || e.key === ' ') this.interact();
+            UIController.updateHUD();
+        });
+
+        this.canvas.addEventListener('mousedown', e => {
+            if (e.button !== 0) return;
+            this.handlePointerMove(e.clientX, e.clientY);
+            this.handlePointerDown();
+        });
+
+        window.addEventListener('mousemove', e => {
+            this.handlePointerMove(e.clientX, e.clientY);
+        });
+
+        window.addEventListener('mouseup', () => {
+            this.handlePointerUp();
+        });
+
+        this.canvas.addEventListener('touchstart', e => {
+            if (!e.touches.length) return;
+            e.preventDefault();
+            const t = e.touches[0];
+            this.touchPointerDown = true;
+            this.handlePointerMove(t.clientX, t.clientY);
+            this.handlePointerDown();
+        }, { passive: false });
+
+        this.canvas.addEventListener('touchmove', e => {
+            if (!e.touches.length) return;
+            e.preventDefault();
+            const t = e.touches[0];
+            this.handlePointerMove(t.clientX, t.clientY);
+        }, { passive: false });
+
+        window.addEventListener('touchend', e => {
+            if (this.touchPointerDown) {
+                e.preventDefault();
+                this.touchPointerDown = false;
+                this.handlePointerUp();
+            }
+        }, { passive: false });
+    }
+
+    setupMobileControls() {
+        const toolButtons = document.getElementById('tool-buttons');
+        const toolData = [
+            { key: ENUMS.TOOLS.HAND, short: 'M', label: 'MANO' },
+            { key: ENUMS.TOOLS.HOE, short: 'A', label: 'AZADA' },
+            { key: ENUMS.TOOLS.WATER, short: 'R', label: 'AGUA' },
+            { key: ENUMS.TOOLS.POTION, short: 'P', label: 'POCIÓN' },
+            { key: ENUMS.TOOLS.FERTILIZER, short: 'F', label: 'FERTI' },
+            { key: ENUMS.TOOLS.GOLD, short: 'O', label: 'ORO' },
+            { key: ENUMS.TOOLS.MAGNET, short: 'I', label: 'IMÁN' }
+        ];
+
+        toolButtons.innerHTML = toolData.map(tool => `
+            <button class="tool-btn" data-tool="${tool.key}">
+                <span>${tool.short}</span>${tool.label}
+            </button>
+        `).join('');
+
+        toolButtons.querySelectorAll('.tool-btn').forEach(btn => {
+            btn.addEventListener('touchstart', e => {
+                e.preventDefault();
+                if (!this.player) return;
+                this.player.tool = btn.dataset.tool;
+                UIController.updateHUD();
+            }, { passive: false });
+
+            btn.addEventListener('click', e => {
+                e.preventDefault();
+                if (!this.player) return;
+                this.player.tool = btn.dataset.tool;
+                UIController.updateHUD();
+            });
+        });
+
+        const actionBtn = document.getElementById('action-btn');
+        const triggerAction = e => {
+            e.preventDefault();
+            if (this.scene === ENUMS.SCENE.PLAY) this.interact();
+        };
+        actionBtn.addEventListener('touchstart', triggerAction, { passive: false });
+        actionBtn.addEventListener('click', triggerAction);
+
+        const wrap = document.getElementById('joystick-wrap');
+        const stick = document.getElementById('joystick-stick');
+        const center = { x: 62, y: 62 };
+        let joystickActive = false;
+        const maxRadius = 34;
+
+        const resetJoystick = () => {
+            joystickActive = false;
+            stick.style.left = `${center.x - 25}px`;
+            stick.style.top = `${center.y - 25}px`;
+            this.inputs['w'] = false;
+            this.inputs['a'] = false;
+            this.inputs['s'] = false;
+            this.inputs['d'] = false;
+        };
+
+        const moveJoystick = (clientX, clientY) => {
+            const rect = wrap.getBoundingClientRect();
+            const localX = clientX - rect.left;
+            const localY = clientY - rect.top;
+            let dx = localX - rect.width / 2;
+            let dy = localY - rect.height / 2;
+            const dist = Math.hypot(dx, dy);
+            if (dist > maxRadius) {
+                dx = (dx / dist) * maxRadius;
+                dy = (dy / dist) * maxRadius;
+            }
+            stick.style.left = `${rect.width / 2 + dx - 25}px`;
+            stick.style.top = `${rect.height / 2 + dy - 25}px`;
+
+            this.inputs['a'] = dx < -8;
+            this.inputs['d'] = dx > 8;
+            this.inputs['w'] = dy < -8;
+            this.inputs['s'] = dy > 8;
+        };
+
+        wrap.addEventListener('touchstart', e => {
+            e.preventDefault();
+            if (!e.touches.length) return;
+            joystickActive = true;
+            moveJoystick(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: false });
+
+        wrap.addEventListener('touchmove', e => {
+            e.preventDefault();
+            if (!joystickActive || !e.touches.length) return;
+            moveJoystick(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: false });
+
+        window.addEventListener('touchend', () => {
+            if (joystickActive) resetJoystick();
+        }, { passive: true });
+
+        resetJoystick();
+    }
+
+    initWorld(isBackground = false) {
+        this.player = {
+            x: 400, y: 300, vx: 0, vy: 0,
+            money: 0, level: 1, xp: 0, seeds: 5,
+            tool: ENUMS.TOOLS.HAND,
+            inventory: { 'PLOT': 3 }
+        };
+
+        this.world = {
+            width: 1600,
+            height: 1200,
+            timeElapsed: 21600000,
+            day: 1,
+            camera: { x: 0, y: 0 },
+            entities: [],
+            currentQuest: null
+        };
+
+        this.particles = [];
+        this.placementRotation = 0;
+        this.selectedPlot = null;
+        this.isDraggingPlot = false;
+
+        if (isBackground) {
+            for (let i = 0; i < 4; i++) this.world.entities.push(new Plot(350 + i*64, 300));
+        }
+
+        this.world.entities.push(new SeedSilo(200, 180));
+        this.world.entities.push(new Workbench(350, 200));
+        this.world.entities.push(new ShopBuilding(500, 180));
+
+        if (isBackground) this.world.camera = { x: 250, y: 250 };
+        this.generateQuest();
+    }
+
+    generateQuest() {
+        const plants = Object.values(DB.PLANTS);
+        const target = plants[Math.floor(Math.random() * plants.length)];
+        const qty = 2 + Math.floor(Math.random() * 3) + this.player.level;
+        this.world.currentQuest = { plantId: target.id, targetQty: qty, currentQty: 0, reward: qty * target.price * 2 };
+    }
+
+    checkLevelUp() {
+        const nextXP = this.player.level * 150;
+        if (this.player.xp >= nextXP) {
+            this.player.level++;
+            this.player.xp -= nextXP;
+            UIController.notify(`¡NIVEL SUBIDO A ${this.player.level}!`);
+        }
+    }
+
+    loadSave(slotId) {
+        this.currentSlot = slotId;
+        const data = SaveManager.getSave(slotId);
+        this.particles = [];
+        this.placementItem = null;
+        this.selectedPlot = null;
+
+        if (data) {
+            this.player = data.player;
+            this.player.inventory = this.player.inventory || {};
+            this.world.timeElapsed = data.world.timeElapsed;
+            this.world.day = data.world.day;
+            this.world.camera = data.world.camera;
+            this.world.currentQuest = data.world.currentQuest || this.world.currentQuest;
+            this.world.entities = data.entities.map(e => {
+                if (e.type === 'SEED') return new SeedDrop(e.x, e.y, e.plantId);
+                if (e.type === 'WORKBENCH') return new Workbench(e.x, e.y);
+                if (e.type === 'SHOP') return new ShopBuilding(e.x, e.y);
+                if (e.type === 'SEED_SILO') return new SeedSilo(e.x, e.y);
+                if (e.type === 'FENCE') return new Fence(e.x, e.y, e.rotation || 0);
+                if (e.type === 'FIREFLY_JAR') return new FireflyJarEntity(e.x, e.y);
+                if (e.type === 'SPRINKLER') return new Sprinkler(e.x, e.y);
+
+                const p = new Plot(e.x, e.y);
+                p.tilled = e.tilled;
+                p.water = e.water;
+                if (e.plant) p.plant = new Plant(DB.PLANTS[e.plant.id], e.plant.growth, e.plant.state);
+                return p;
+            });
+
+            if (!this.world.entities.find(e => e.type === 'WORKBENCH')) this.world.entities.push(new Workbench(350, 200));
+            if (!this.world.entities.find(e => e.type === 'SHOP')) this.world.entities.push(new ShopBuilding(500, 180));
+            if (!this.world.entities.find(e => e.type === 'SEED_SILO')) this.world.entities.push(new SeedSilo(200, 180));
+        } else {
+            this.initWorld(false);
+        }
+
+        this.scene = ENUMS.SCENE.PLAY;
+        document.getElementById('main-menu').style.display = 'none';
+        document.getElementById('game-ui').style.display = 'block';
+        UIController.updateHUD();
+    }
+
+    interact() {
+        const px = this.player.x + 16, py = this.player.y + 24;
+        let interactedUI = false;
+
+        if (this.player.tool === ENUMS.TOOLS.MAGNET) {
+            let nearUI = false;
+            this.world.entities.forEach(ent => {
+                if ((ent.type === 'WORKBENCH' || ent.type === 'SHOP' || ent.type === 'SEED_SILO') &&
+                    Math.hypot(px - (ent.x + 32), py - (ent.y + 32)) < 65) nearUI = true;
+            });
+
+            if (!nearUI) {
+                if ((this.player.inventory['MAGIC_MAGNET'] || 0) > 0) {
+                    this.player.inventory['MAGIC_MAGNET']--;
+                    UIController.notify("¡Onda Magnética Activada!");
+                    for (let i = 0; i < 40; i++) {
+                        let p = new Particle(px, py, 'WATER');
+                        p.color = '#e066ff';
+                        p.vx = Math.cos(i * 0.15) * 12;
+                        p.vy = Math.sin(i * 0.15) * 12;
+                        this.particles.push(p);
+                    }
+                    this.world.entities.forEach(ent => {
+                        if (ent.type === 'SEED' && Math.hypot(ent.x - px, ent.y - py) < 800) {
+                            ent.magnetized = true;
+                            ent.target = this.player;
+                        }
+                    });
+                    UIController.updateHUD();
+                } else {
+                    UIController.notify("No tienes el Imán Mágico", true);
+                }
+                return;
+            }
+        }
+
+        this.world.entities.forEach(ent => {
+            const isLarge = ent.type === 'WORKBENCH' || ent.type === 'SHOP' || ent.type === 'SEED_SILO';
+            const cx = ent.type === 'SWARM' ? ent.x : ent.x + (isLarge ? 32 : 16);
+            const cy = ent.type === 'SWARM' ? ent.y : ent.y + (isLarge ? 32 : 16);
+            const radius = ent.type === 'SWARM' ? 45 : (isLarge ? 65 : 40);
+
+            if (Math.hypot(px - cx, py - cy) < radius) {
+                if (ent.type === 'WORKBENCH' && !interactedUI) { UIController.openCrafting(); interactedUI = true; return; }
+                if (ent.type === 'SHOP' && !interactedUI) { UIController.openShop(); interactedUI = true; return; }
+                if (ent.type === 'SEED_SILO' && !interactedUI) { UIController.openSeedMenu(); interactedUI = true; return; }
+
+                if (ent.type === 'SWARM') {
+                    if (this.placementItem === 'GLASS_JAR') {
+                        if ((this.player.inventory['GLASS_JAR'] || 0) > 0) {
+                            ent.toDelete = true;
+                            this.player.inventory['GLASS_JAR']--;
+                            this.player.inventory['FIREFLY_JAR'] = (this.player.inventory['FIREFLY_JAR'] || 0) + 1;
+                            if (this.player.inventory['GLASS_JAR'] <= 0) this.placementItem = null;
+                            UIController.notify("¡Luciérnagas atrapadas!");
+                        }
+                    } else {
+                        UIController.notify("Selecciona la Jarra de Vidrio para atraparlas", true);
+                    }
+                } else if (ent.type === 'SEED') {
+                    this.player.seeds++;
+                    ent.toDelete = true;
+                    UIController.notify("+1 Semilla Silvestre");
+                } else if (ent.type === 'PLOT') {
+                    if (this.player.tool === ENUMS.TOOLS.HOE && !ent.tilled) {
+                        ent.tilled = true;
+                        for (let i = 0; i < 8; i++) this.particles.push(new Particle(ent.x + 16, ent.y + 16, 'DIRT'));
+                        if (this.player.seeds > 0) {
+                            const keys = Object.keys(DB.PLANTS);
+                            ent.plant = new Plant(DB.PLANTS[keys[Math.floor(Math.random()*keys.length)]]);
+                            this.player.seeds--;
+                        }
+                    } else if (this.player.tool === ENUMS.TOOLS.HOE && ent.tilled && !ent.plant && this.player.seeds > 0) {
+                        const keys = Object.keys(DB.PLANTS);
+                        ent.plant = new Plant(DB.PLANTS[keys[Math.floor(Math.random()*keys.length)]]);
+                        this.player.seeds--;
+                    } else if (this.player.tool === ENUMS.TOOLS.WATER) {
+                        ent.water = 100;
+                        for (let i = 0; i < 8; i++) this.particles.push(new Particle(ent.x + 16, ent.y + 16, 'WATER'));
+                    } else if (this.player.tool === ENUMS.TOOLS.POTION && ent.plant && ent.plant.state !== ENUMS.PLANT_STATE.MATURE) {
+                        if ((this.player.inventory['POTION_GROWTH'] || 0) > 0) {
+                            ent.plant.growth = 100;
+                            ent.plant.state = ENUMS.PLANT_STATE.MATURE;
+                            this.player.inventory['POTION_GROWTH']--;
+                            UIController.notify("Poción usada");
+                        } else {
+                            UIController.notify("No tienes Pociones", true);
+                        }
+                    } else if (this.player.tool === ENUMS.TOOLS.FERTILIZER) {
+                        if ((this.player.inventory['SUPER_FERTILIZER'] || 0) > 0) {
+                            ent.water = 99999;
+                            this.player.inventory['SUPER_FERTILIZER']--;
+                            for (let i = 0; i < 12; i++) this.particles.push(new Particle(ent.x + 16, ent.y + 16, 'WATER'));
+                            UIController.notify("Tierra super fertilizada");
+                        } else {
+                            UIController.notify("No tienes Fertilizante", true);
+                        }
+                    } else if (this.player.tool === ENUMS.TOOLS.GOLD && ent.plant?.state === ENUMS.PLANT_STATE.MATURE) {
+                        if ((this.player.inventory['GOLD_TRANSMUTE'] || 0) > 0) {
+                            this.player.money += 350;
+                            this.player.inventory['GOLD_TRANSMUTE']--;
+                            ent.plant = null;
+                            ent.tilled = false;
+                            for (let i = 0; i < 15; i++) this.particles.push(new Particle(ent.x + 16, ent.y + 16, 'GOLD'));
+                            UIController.notify("Transmutación Exitosa: +350 F");
+                        } else {
+                            UIController.notify("No tienes Transmutación de Oro", true);
+                        }
+                    } else if (this.player.tool === ENUMS.TOOLS.HAND && ent.plant?.state === ENUMS.PLANT_STATE.MATURE) {
+                        const pData = ent.plant.data;
+                        this.player.money += pData.price;
+                        this.player.xp += pData.xp;
+                        this.player.inventory[pData.id] = (this.player.inventory[pData.id] || 0) + 1;
+
+                        if (Math.random() < (pData.seedDropChance || 0)) {
+                            this.player.seeds++;
+                            UIController.notify("+1 Semilla obtenida");
+                        }
+
+                        if (this.world.currentQuest.plantId === pData.id) {
+                            this.world.currentQuest.currentQty++;
+                            if (this.world.currentQuest.currentQty >= this.world.currentQuest.targetQty) {
+                                this.player.money += this.world.currentQuest.reward;
+                                this.player.xp += 100;
+                                UIController.notify(`CONTRATO COMPLETADO: +${this.world.currentQuest.reward} F`);
+                                this.generateQuest();
+                            }
+                        }
+
+                        ent.plant = null;
+                        ent.tilled = false;
+                        this.checkLevelUp();
+                        UIController.notify(`Cosechado: ${pData.name}`);
+                    }
+                }
+            }
+        });
+
+        this.world.entities = this.world.entities.filter(e => !e.toDelete);
+        UIController.updateHUD();
+    }
+
+    sellSeeds(amount, reward) {
+        if (this.player.seeds >= amount) {
+            this.player.seeds -= amount;
+            this.player.money += reward;
+            UIController.notify(`Exportadas ${amount} semillas por +${reward} F`);
+            UIController.renderSeedUI();
+            UIController.updateHUD();
+        } else {
+            UIController.notify(`Faltan semillas para este lote`, true);
+        }
+    }
+
+    craft(recipeId) {
+        const recipe = DB.RECIPES[recipeId];
+        let canCraft = true;
+        for (let reqId in recipe.req) {
+            if ((this.player.inventory[reqId] || 0) < recipe.req[reqId]) canCraft = false;
+        }
+
+        if (canCraft) {
+            for (let reqId in recipe.req) this.player.inventory[reqId] -= recipe.req[reqId];
+            this.player.inventory[recipeId] = (this.player.inventory[recipeId] || 0) + 1;
+            UIController.notify(`Fabricado: ${recipe.name}`);
+            UIController.renderCraftingUI();
+            UIController.updateHUD();
+        }
+    }
+
+    buy(itemId) {
+        const item = DB.SHOP[itemId];
+        if (this.player.money >= item.price) {
+            this.player.money -= item.price;
+            this.player.inventory[itemId] = (this.player.inventory[itemId] || 0) + item.qty;
+            UIController.notify(`Comprado: ${item.name}`);
+            UIController.updateHUD();
+        } else {
+            UIController.notify(`Faltan Florins`, true);
+        }
+    }
+
+    togglePlacement(itemId) {
+        if (this.placementItem === itemId) {
+            this.placementItem = null;
+            this.placementRotation = 0;
+        } else {
+            this.placementItem = itemId;
+            this.placementRotation = 0;
+            this.selectedPlot = null;
+            let msg = "Modo Construcción Activo.";
+            if (itemId === 'FENCE') msg = "Construcción activa. Toca una parcela para rotar con teclado si lo deseas.";
+            if (itemId === 'GLASS_JAR') msg = "Jarra Equipada. Usa cerca de las luciérnagas.";
+            if (itemId === 'SPRINKLER') msg = "Aspersor activo. Toca el terreno para colocarlo.";
+            UIController.notify(msg);
+        }
+        UIController.updateHUD();
+    }
+
+    placeStructure() {
+        if ((this.player.inventory[this.placementItem] || 0) <= 0) {
+            this.placementItem = null;
+            UIController.updateHUD();
+            return;
+        }
+
+        const cam = this.world.camera;
+        const wx = this.mouseX + cam.x;
+        const wy = this.mouseY + cam.y;
+        const gx = Math.floor(wx / 32) * 32;
+        const gy = Math.floor(wy / 32) * 32;
+        const occupied = this.world.entities.some(e => Math.abs(e.x - gx) < 24 && Math.abs(e.y - gy) < 24);
+
+        if (!occupied) {
+            this.player.inventory[this.placementItem]--;
+
+            if (this.placementItem === 'PLOT') {
+                this.world.entities.push(new Plot(gx, gy));
+                for (let i = 0; i < 8; i++) this.particles.push(new Particle(gx + 16, gy + 16, 'DIRT'));
+            } else if (this.placementItem === 'FENCE') {
+                this.world.entities.push(new Fence(gx, gy, this.placementRotation || 0));
+            } else if (this.placementItem === 'FIREFLY_JAR') {
+                this.world.entities.push(new FireflyJarEntity(gx, gy));
+            } else if (this.placementItem === 'SPRINKLER') {
+                this.world.entities.push(new Sprinkler(gx, gy));
+            }
+
+            UIController.notify("Objeto colocado");
+            if (this.player.inventory[this.placementItem] <= 0) this.placementItem = null;
+            UIController.updateHUD();
+        } else {
+            UIController.notify("Espacio bloqueado", true);
+        }
+    }
+
+    update(dt) {
+        if (this.scene !== ENUMS.SCENE.PLAY) {
+            if (this.scene === ENUMS.SCENE.MENU) {
+                this.world.camera.x += 0.4;
+                if (this.world.camera.x > 800) this.world.camera.x = 0;
+            }
+            return;
+        }
+
+        let ax = 0, ay = 0;
+        if (this.inputs['w']) ay -= 0.8;
+        if (this.inputs['s']) ay += 0.8;
+        if (this.inputs['a']) ax -= 0.8;
+        if (this.inputs['d']) ax += 0.8;
+
+        this.player.vx = (this.player.vx + ax) * 0.82;
+        this.player.vy = (this.player.vy + ay) * 0.82;
+
+        let nextX = this.player.x + this.player.vx;
+        let nextY = this.player.y + this.player.vy;
+
+        for (let e of this.world.entities) {
+            if (e.type === 'FENCE') {
+                if (nextX < e.x + 32 && nextX + 32 > e.x && this.player.y < e.y + 32 && this.player.y + 32 > e.y) {
+                    this.player.vx = 0;
+                    nextX = this.player.x;
+                }
+                if (this.player.x < e.x + 32 && this.player.x + 32 > e.x && nextY < e.y + 32 && nextY + 32 > e.y) {
+                    this.player.vy = 0;
+                    nextY = this.player.y;
+                }
+            }
+        }
+
+        this.player.x = Math.max(0, Math.min(this.world.width - 32, nextX));
+        this.player.y = Math.max(0, Math.min(this.world.height - 32, nextY));
+
+        const halfW = this.viewWidth / 2;
+        const halfH = this.viewHeight / 2;
+
+        this.world.camera.x += (this.player.x - halfW - this.world.camera.x) * 0.1;
+        this.world.camera.y += (this.player.y - halfH - this.world.camera.y) * 0.1;
+
+        this.world.camera.x = Math.max(0, Math.min(this.world.width - this.viewWidth, this.world.camera.x));
+        this.world.camera.y = Math.max(0, Math.min(this.world.height - this.viewHeight, this.world.camera.y));
+
+        this.world.timeElapsed += dt * 150;
+        if (this.world.timeElapsed >= 86400000) {
+            this.world.timeElapsed = 0;
+            this.world.day++;
+        }
+
+        const h = Math.floor(this.world.timeElapsed / 3600000) % 24;
+        const m = Math.floor((this.world.timeElapsed % 3600000) / 60000);
+        const timeUI = document.getElementById('ui-time');
+        if (timeUI) timeUI.innerText = `DÍA ${this.world.day} - ${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
+
+        if (Math.random() < 0.003) {
+            const keys = Object.keys(DB.PLANTS);
+            this.world.entities.push(new SeedDrop(Math.random()*1500, Math.random()*1100, keys[Math.floor(Math.random()*keys.length)]));
+        }
+
+        const currentHour = this.world.timeElapsed / 3600000;
+        const isNight = currentHour >= 22.0 || currentHour < 5.0;
+
+        if (isNight) {
+            if (Math.random() < 0.005) {
+                const swarms = this.world.entities.filter(e => e.type === 'SWARM').length;
+                if (swarms < 3) {
+                    const sx = Math.max(100, Math.min(this.world.width - 100, Math.random() * this.world.width));
+                    const sy = Math.max(100, Math.min(this.world.height - 100, Math.random() * this.world.height));
+                    this.world.entities.push(new FireflySwarm(sx, sy));
+                }
+            }
+        } else {
+            this.world.entities.forEach(e => { if (e.type === 'SWARM') e.toDelete = true; });
+        }
+
+        this.world.entities.forEach(e => e.update(dt));
+        this.world.entities = this.world.entities.filter(e => !e.toDelete);
+
+        this.particles.forEach(p => p.update(dt));
+        this.particles = this.particles.filter(p => p.life > 0);
+    }
+
+    draw() {
+        const ctx = this.ctx, cam = this.world.camera;
+        const viewW = this.viewWidth, viewH = this.viewHeight;
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, viewW, viewH);
+
+        for (let i = 0; i < 1600; i += 32) {
+            for (let j = 0; j < 1200; j += 32) {
+                if (i > cam.x - 32 && i < cam.x + viewW && j > cam.y - 32 && j < cam.y + viewH) {
+                    ctx.drawImage(this.lib.get('grass'), i - cam.x, j - cam.y);
+                }
+            }
+        }
+
+        this.world.entities.forEach(e => { if (e.type === 'PLOT') e.draw(ctx, this.lib, cam); });
+
+        const items = [];
+        if (this.scene === ENUMS.SCENE.PLAY) items.push({ ...this.player, type: 'PLAYER' });
+
+        this.world.entities.forEach(e => {
+            if (e.type !== 'PLOT') items.push(e);
+            if (e.type === 'PLOT' && e.plant) items.push({ type: 'PLANT_WRAPPER', y: e.y, plot: e });
+        });
+
+        items.sort((a,b) => a.y - b.y).forEach(obj => {
+            if (obj.type === 'PLAYER') ctx.drawImage(this.lib.get('player'), obj.x - cam.x, obj.y - cam.y - 12);
+            else if (obj.type === 'PLANT_WRAPPER') obj.plot.plant.draw(ctx, this.lib, cam, obj.plot.x, obj.plot.y);
+            else obj.draw(ctx, this.lib, cam);
+        });
+
+        this.particles.forEach(p => p.draw(ctx, cam));
+
+        const wx = this.mouseX + cam.x;
+        const wy = this.mouseY + cam.y;
+
+        if (!this.placementItem && !this.isDraggingPlot) {
+            for (let i = this.world.entities.length - 1; i >= 0; i--) {
+                const ent = this.world.entities[i];
+                if ((ent.type === 'PLOT' || ent.type === 'FENCE' || ent.type === 'FIREFLY_JAR' || ent.type === 'SPRINKLER') &&
+                    wx >= ent.x && wx < ent.x + 32 && wy >= ent.y && wy < ent.y + 32) {
+                    ctx.strokeStyle = '#FFD700';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(ent.x - cam.x, ent.y - cam.y, 32, 32);
+                    break;
+                }
+            }
+        }
+
+        if (this.selectedPlot && this.scene === ENUMS.SCENE.PLAY) {
+            ctx.strokeStyle = '#4CAF50';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(this.selectedPlot.x - cam.x, this.selectedPlot.y - cam.y, 32, 32);
+            const px = this.selectedPlot.x - cam.x;
+            const py = this.selectedPlot.y - cam.y;
+            ctx.fillStyle = '#2196F3';
+            ctx.fillRect(px, py - 20, 16, 16);
+            ctx.fillStyle = '#fff';
+            ctx.font = '10px "Press Start 2P"';
+            ctx.fillText('M', px + 4, py - 7);
+            ctx.fillStyle = '#f44336';
+            ctx.fillRect(px + 16, py - 20, 16, 16);
+            ctx.fillStyle = '#fff';
+            ctx.fillText('X', px + 20, py - 7);
+        }
+
+        const currentHour = this.world.timeElapsed / 3600000;
+        let r = 0, g = 0, b = 40, a = 0;
+
+        if (currentHour >= 20.0 && currentHour < 22.0) {
+            let p = (currentHour - 20.0) / 2.0;
+            r = 180 * (1 - p);
+            g = 80 * (1 - p);
+            b = 40 + 80 * p;
+            a = 0.45 * p;
+        } else if (currentHour >= 22.0 || currentHour < 4.0) {
+            r = 0; g = 0; b = 120; a = 0.45;
+        } else if (currentHour >= 4.0 && currentHour < 6.0) {
+            let p = (currentHour - 4.0) / 2.0;
+            r = 180 * p;
+            g = 80 * p;
+            b = 120 - 80 * p;
+            a = 0.45 * (1 - p);
+        }
+
+        if (a > 0) {
+            this.lightCtx.clearRect(0, 0, viewW, viewH);
+            this.lightCtx.fillStyle = `rgba(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)}, ${a})`;
+            this.lightCtx.fillRect(0, 0, viewW, viewH);
+
+            this.lightCtx.globalCompositeOperation = 'destination-out';
+            this.world.entities.forEach(e => {
+                if (e.type === 'SWARM' || e.type === 'FIREFLY_JAR') {
+                    const cx = e.x - cam.x + (e.type === 'SWARM' ? 0 : 16);
+                    const cy = e.y - cam.y + (e.type === 'SWARM' ? 0 : 16);
+                    const radius = e.type === 'SWARM' ? 60 : 110;
+                    const grad = this.lightCtx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+                    grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+                    grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                    this.lightCtx.fillStyle = grad;
+                    this.lightCtx.beginPath();
+                    this.lightCtx.arc(cx, cy, radius, 0, Math.PI*2);
+                    this.lightCtx.fill();
+                }
+            });
+            this.lightCtx.globalCompositeOperation = 'source-over';
+            ctx.drawImage(this.lightCanvas, 0, 0);
+        }
+
+        if (this.placementItem && this.scene === ENUMS.SCENE.PLAY && this.placementItem !== 'GLASS_JAR') {
+            const gx = Math.floor(wx / 32) * 32;
+            const gy = Math.floor(wy / 32) * 32;
+
+            if (this.placementItem === 'SPRINKLER') {
+                ctx.beginPath();
+                ctx.arc(gx - cam.x + 16, gy - cam.y + 16, 75, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0, 188, 212, 0.15)';
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(0, 188, 212, 0.5)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+
+            ctx.globalAlpha = 0.6;
+            if (this.placementItem === 'PLOT') ctx.drawImage(this.lib.get('dirt_dry'), gx - cam.x, gy - cam.y);
+            if (this.placementItem === 'FENCE') {
+                ctx.save();
+                ctx.translate(gx - cam.x + 16, gy - cam.y + 16);
+                ctx.rotate((this.placementRotation * 90) * Math.PI / 180);
+                ctx.drawImage(this.lib.get('fence'), -16, -16);
+                ctx.restore();
+            }
+            if (this.placementItem === 'FIREFLY_JAR') ctx.drawImage(this.lib.get('firefly_jar'), gx - cam.x, gy - cam.y);
+            if (this.placementItem === 'SPRINKLER') {
+                ctx.drawImage(this.lib.get('sprinkler_base'), gx - cam.x, gy - cam.y);
+                ctx.drawImage(this.lib.get('sprinkler_head'), gx - cam.x, gy - cam.y);
+            }
+            ctx.globalAlpha = 1.0;
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(gx - cam.x, gy - cam.y, 32, 32);
+        }
+    }
+
+    loop(t) {
+        const dt = t - (this.lastTime || t);
+        this.lastTime = t;
+        this.update(dt);
+        this.draw();
+        requestAnimationFrame(n => this.loop(n));
+    }
+
+    pauseGame() {
+        this.scene = ENUMS.SCENE.PAUSE;
+        document.getElementById('pause-menu').style.display = 'flex';
+    }
+
+    resumeGame() {
+        this.scene = ENUMS.SCENE.PLAY;
+        document.getElementById('pause-menu').style.display = 'none';
+    }
+
+    saveAndExit() {
+        SaveManager.saveGame(this.currentSlot, this);
+        this.scene = ENUMS.SCENE.MENU;
+        document.getElementById('pause-menu').style.display = 'none';
+        document.getElementById('game-ui').style.display = 'none';
+        document.getElementById('main-menu').style.display = 'flex';
+        UIController.renderSaveSlots();
+    }
+}
+
+class UIController {
+    static renderSaveSlots() {
+        const container = document.getElementById('save-slots-container');
+        container.innerHTML = '';
+        for (let i = 1; i <= 3; i++) {
+            const d = SaveManager.getSave(i);
+            const slot = document.createElement('div');
+            slot.className = 'save-slot';
+            slot.onclick = () => Game.loadSave(i);
+            slot.innerHTML = d
+                ? `<div class="slot-title">JUEGO ${i}</div><div>LVL ${d.player.level}</div><div>${d.player.money} F</div><button class="btn-delete" onclick="SaveManager.deleteSave(${i}, event)">BORRAR</button>`
+                : `<div class="slot-title">JUEGO ${i}</div><div style="color:#666">VACÍO</div>`;
+            container.appendChild(slot);
+        }
+    }
+
+    static updateHUD() {
+        if (Game.scene !== ENUMS.SCENE.PLAY && Game.scene !== ENUMS.SCENE.CRAFTING && Game.scene !== ENUMS.SCENE.SHOP && Game.scene !== ENUMS.SCENE.SEED_MENU) return;
+        const p = Game.player, w = Game.world;
+        document.getElementById('ui-lvl').innerText = p.level;
+        document.getElementById('ui-money').innerText = p.money;
+        document.getElementById('ui-tool').innerText = p.tool;
+        document.getElementById('xp-fill').style.width = `${(p.xp / (p.level * 150)) * 100}%`;
+        document.getElementById('ui-xp-text').innerText = `${p.xp}/${p.level * 150} XP`;
+
+        const q = w.currentQuest;
+        document.getElementById('quest-info').innerText = `${DB.PLANTS[q.plantId].name}: ${q.currentQty}/${q.targetQty}`;
+
+        this.renderInventory();
+        this.renderToolButtons();
+    }
+
+    static renderToolButtons() {
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tool === Game.player.tool);
+        });
+    }
+
+    static renderInventory() {
+        const bar = document.getElementById('inventory-bar');
+        bar.innerHTML = '';
+        const inv = Game.player.inventory;
+
+        bar.innerHTML += `<div class="inv-slot" style="color:#fff"><div class="label">Semillas Silvestres</div>S<div class="count">${Game.player.seeds}</div></div>`;
+
+        for (let id in inv) {
+            if (inv[id] > 0) {
+                let color = '#fff', text = id.substring(0,2), name = "Objeto";
+
+                if (DB.PLANTS[id]) {
+                    color = DB.PLANTS[id].color;
+                    name = DB.PLANTS[id].name;
+                } else if (DB.RECIPES[id]) {
+                    color = id === 'GOLD_TRANSMUTE' ? '#FFD700' : (id === 'MAGIC_MAGNET' ? '#e066ff' : '#4caf50');
+                    text = id === 'POTION_GROWTH' ? 'Poc' : (id === 'GOLD_TRANSMUTE' ? 'Oro' : (id === 'MAGIC_MAGNET' ? 'Imn' : 'Fer'));
+                    name = DB.RECIPES[id].name;
+                } else if (id === 'PLOT') {
+                    color = '#8d6e63'; text = 'Par'; name = 'Parcela';
+                } else if (id === 'FENCE') {
+                    color = '#d7ccc8'; text = 'Val'; name = 'Valla';
+                } else if (id === 'GLASS_JAR') {
+                    color = '#81d4fa'; text = 'Vdr'; name = 'J. Vidrio';
+                } else if (id === 'FIREFLY_JAR') {
+                    color = '#ccff00'; text = 'Luc'; name = 'J. Luciérnagas';
+                } else if (id === 'SPRINKLER') {
+                    color = '#00bcd4'; text = 'Asp'; name = 'Aspersor';
+                }
+
+                let extraStyle = "";
+                let onclickEvent = "";
+
+                if (id === 'PLOT' || id === 'FENCE' || id === 'GLASS_JAR' || id === 'FIREFLY_JAR' || id === 'SPRINKLER') {
+                    extraStyle = "cursor: pointer;";
+                    onclickEvent = `onclick="Game.togglePlacement('${id}')"`;
+                    if (Game.placementItem === id) {
+                        extraStyle += " border-color: #FFD700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.8); background: rgba(255,215,0,0.2);";
+                    }
+                }
+
+                bar.innerHTML += `<div class="inv-slot" style="color:${color}; border-color:${color}; ${extraStyle}" ${onclickEvent}><div class="label">${name}</div>${text}<div class="count">${inv[id]}</div></div>`;
+            }
+        }
+    }
+
+    static openCrafting() {
+        Game.scene = ENUMS.SCENE.CRAFTING;
+        document.getElementById('crafting-menu').style.display = 'flex';
+        this.renderCraftingUI();
+    }
+
+    static closeCrafting() {
+        Game.scene = ENUMS.SCENE.PLAY;
+        document.getElementById('crafting-menu').style.display = 'none';
+    }
+
+    static openShop() {
+        Game.scene = ENUMS.SCENE.SHOP;
+        document.getElementById('shop-menu').style.display = 'flex';
+        this.renderShopUI();
+    }
+
+    static closeShop() {
+        Game.scene = ENUMS.SCENE.PLAY;
+        document.getElementById('shop-menu').style.display = 'none';
+    }
+
+    static openSeedMenu() {
+        Game.scene = ENUMS.SCENE.SEED_MENU;
+        document.getElementById('seed-menu').style.display = 'flex';
+        this.renderSeedUI();
+    }
+
+    static closeSeedMenu() {
+        Game.scene = ENUMS.SCENE.PLAY;
+        document.getElementById('seed-menu').style.display = 'none';
+    }
+
+    static renderCraftingUI() {
+        const list = document.getElementById('recipes-list');
+        list.innerHTML = '';
+        const inv = Game.player.inventory;
+
+        for (let key in DB.RECIPES) {
+            const recipe = DB.RECIPES[key];
+            let reqHtml = '', canCraft = true;
+            for (let reqId in recipe.req) {
+                const has = inv[reqId] || 0;
+                const need = recipe.req[reqId];
+                const color = has >= need ? '#2e7d32' : '#d84315';
+                reqHtml += `<span style="color:${color}">${DB.PLANTS[reqId].name} (${has}/${need})</span> | `;
+                if (has < need) canCraft = false;
+            }
+
+            list.innerHTML += `
+                <div class="recipe-card">
+                    <div class="recipe-info">
+                        <h3>${recipe.name}</h3>
+                        <p>${recipe.desc}</p>
+                        <div class="recipe-req">${reqHtml.slice(0,-2)}</div>
+                    </div>
+                    <button class="btn-craft" ${canCraft ? '' : 'disabled'} onclick="Game.craft('${recipe.id}')">FABRICAR</button>
+                </div>
+            `;
+        }
+    }
+
+    static renderShopUI() {
+        const list = document.getElementById('shop-list');
+        list.innerHTML = '';
+        for (let key in DB.SHOP) {
+            const item = DB.SHOP[key];
+            const canBuy = Game.player.money >= item.price;
+            list.innerHTML += `
+                <div class="recipe-card" style="border-color: #ffd54f;">
+                    <div class="recipe-info">
+                        <h3 style="color: #f57f17;">${item.name}</h3>
+                        <p>${item.desc}</p>
+                        <div class="recipe-req" style="color: #d84315;">Costo: ${item.price} F</div>
+                    </div>
+                    <button class="btn-craft" style="background: ${canBuy ? '#FFD700' : '#ccc'}; border-color: ${canBuy ? '#b8860b' : '#999'}; color: ${canBuy ? '#000' : '#666'};" ${canBuy ? '' : 'disabled'} onclick="Game.buy('${item.id}')">COMPRAR</button>
+                </div>
+            `;
+        }
+    }
+
+    static renderSeedUI() {
+        const list = document.getElementById('seed-list');
+        list.innerHTML = '';
+        DB.SEED_EXCHANGE.forEach(offer => {
+            const canBuy = Game.player.seeds >= offer.seeds;
+            list.innerHTML += `
+                <div class="recipe-card" style="border-color: #81c784;">
+                    <div class="recipe-info">
+                        <h3 style="color: #2e7d32;">Lote de ${offer.seeds} Semillas</h3>
+                        <p>Exportar ${offer.seeds} semillas silvestres.</p>
+                        <div class="recipe-req" style="color: #1b5e20;">Recompensa: ${offer.florins} F</div>
+                    </div>
+                    <button class="btn-craft" style="background: ${canBuy ? '#4CAF50' : '#ccc'}; border-color: ${canBuy ? '#2e7d32' : '#999'}; color: ${canBuy ? '#fff' : '#666'};" ${canBuy ? '' : 'disabled'} onclick="Game.sellSeeds(${offer.seeds}, ${offer.florins})">VENDER</button>
+                </div>
+            `;
+        });
+    }
+
+    static notify(txt, isError = false) {
+        const n = document.createElement('div');
+        n.innerText = txt;
+        n.style.color = isError ? "#ff5252" : "#FFD700";
+        document.getElementById('notifications').appendChild(n);
+        setTimeout(() => n.remove(), 3000);
+    }
+}
+
+const Game = new Engine();
+</script>
+</body>
+</html>
